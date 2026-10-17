@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5efff">
+<title>Mystic Spells｜クラフト管理</title>
+<style>
+  :root {
+    --ink: #453b58;
+    --muted: #81758f;
+    --purple: #8d72b8;
+    --purple-dark: #6f5598;
+    --pink: #e8b9d7;
+    --line: #e9e0f1;
+    --paper: #ffffff;
+    --bg: #f8f5fc;
+    --lavender: #f0e9fa;
+    --shadow: 0 8px 24px rgba(91, 68, 120, .08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    background: linear-gradient(180deg, #f8f3fc 0%, #fbf9fd 45%, #f6f3fa 100%);
+  }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+  .app { max-width: 1440px; margin: 0 auto; padding: 22px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 22px 26px; border: 1px solid #eee5f6; border-radius: 22px;
+    background: rgba(255,255,255,.88); box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .brand { display:flex; align-items:center; gap:14px; }
+  .logo {
+    display:grid; place-items:center; width:54px; height:54px; border-radius:17px;
+    background: linear-gradient(135deg, #eadcf9, #fbe7f3); font-size:28px;
+  }
+  h1 { font-size: clamp(21px, 3vw, 30px); letter-spacing:.04em; margin:0; }
+  .subtitle { color:var(--muted); font-size:13px; margin-top:5px; }
+  .header-note { color:var(--muted); font-size:13px; text-align:right; line-height:1.7; }
+  .layout { display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(350px, .85fr); gap:20px; align-items:start; }
+  .panel { background:var(--paper); border:1px solid #eee6f5; border-radius:22px; box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { padding:20px 22px 14px; border-bottom:1px solid #f1ebf6; }
+  .panel-head h2 { margin:0; font-size:18px; }
+  .panel-head p { margin:6px 0 0; font-size:12px; color:var(--muted); }
+  .product-list { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; padding:16px; }
+  .product {
+    border:1px solid var(--line); border-radius:17px; padding:15px; background:#fff;
+    min-width:0; transition:border-color .15s, transform .15s;
+  }
+  .product:hover { border-color:#cdb9e5; transform:translateY(-1px); }
+  .product-top { display:flex; gap:10px; align-items:center; margin-bottom:12px; }
+  .emoji { display:grid; place-items:center; width:43px; height:43px; flex:0 0 43px; border-radius:14px; background:#f7f1fc; font-size:24px; }
+  .product h3 { margin:0; font-size:15px; overflow-wrap:anywhere; }
+  .product .price { margin-top:4px; font-size:13px; color:var(--purple-dark); font-weight:700; }
+  .quick-label { color:var(--muted); font-size:11px; margin:0 0 7px; }
+  .quick-buttons { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+  .quick-buttons button {
+    border:1px solid #e6dcef; background:#faf7fd; color:#6f588b; border-radius:9px;
+    padding:8px 0; font-weight:700; font-size:12px;
+  }
+  .quick-buttons button:hover { background:#eee4f8; border-color:#cbb6e3; }
+  .custom-row { display:flex; gap:7px; margin-top:9px; }
+  .custom-row input {
+    width:100%; min-width:0; border:1px solid #e4dbeD; border-radius:9px;
+    padding:9px 10px; color:var(--ink); background:#fff;
+  }
+  .custom-row input:focus { outline:2px solid #e7d8f6; border-color:#bba1d9; }
+  .add-btn {
+    border:0; border-radius:9px; padding:0 13px; color:#fff; white-space:nowrap;
+    background:var(--purple); font-weight:700; font-size:12px;
+  }
+  .add-btn:hover { background:var(--purple-dark); }
+  .right-column { display:grid; gap:20px; }
+  .summary-top { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:16px 18px 0; }
+  .stat { background:#faf7fd; border:1px solid #eee5f6; border-radius:15px; padding:14px; }
+  .stat-label { color:var(--muted); font-size:12px; }
+  .stat-value { font-size:clamp(20px, 2.4vw, 27px); font-weight:800; color:var(--purple-dark); margin-top:5px; overflow-wrap:anywhere; }
+  .order-list { padding:12px 18px 18px; }
+  .empty { text-align:center; padding:30px 12px; color:#9a8eaa; font-size:13px; line-height:1.8; }
+  .order-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; padding:13px 0; border-bottom:1px solid #f0eaf5; }
+  .order-item:last-child { border-bottom:0; }
+  .order-name { font-size:14px; font-weight:700; }
+  .order-price { font-size:12px; color:var(--muted); margin-top:4px; }
+  .order-controls { display:flex; align-items:center; gap:7px; }
+  .qty { min-width:28px; text-align:center; font-weight:800; }
+  .small-btn { width:29px; height:29px; border:1px solid #e5d9ef; background:#faf7fd; color:#715a8e; border-radius:8px; font-weight:800; }
+  .remove-btn { border:0; background:transparent; color:#b18eaa; font-size:17px; padding:3px; }
+  .materials { padding:8px 18px 18px; }
+  .material-note { color:var(--muted); font-size:12px; margin:0 0 10px; }
+  .material-row { display:flex; justify-content:space-between; gap:12px; padding:11px 2px; border-bottom:1px solid #f0eaf5; font-size:13px; }
+  .material-row:last-child { border-bottom:0; }
+  .material-count { font-weight:800; color:var(--purple-dark); white-space:nowrap; }
+  .no-materials { color:#9a8eaa; font-size:13px; padding:14px 0 20px; }
+  .bottom-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:14px 18px 18px; border-top:1px solid #f1ebf6; }
+  .hint { color:var(--muted); font-size:11px; line-height:1.6; }
+  .reset-btn { border:1px solid #e7d9e9; border-radius:10px; padding:10px 14px; color:#8b637f; background:#fff8fc; font-weight:700; white-space:nowrap; }
+  .reset-btn:hover { background:#fcecf5; }
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:11px 17px; background:#4f4165; color:white; border-radius:12px; box-shadow:var(--shadow); font-size:13px; opacity:0; pointer-events:none; transition:opacity .2s; z-index:5; }
+  .toast.show { opacity:1; }
+  footer { text-align:center; padding:22px 8px 4px; color:#a095ae; font-size:11px; }
+  @media (max-width: 850px) {
+    .app { padding:13px; }
+    .layout { grid-template-columns:1fr; }
+    .right-column { grid-template-columns:1fr; }
+    header { padding:17px; }
+    .header-note { display:none; }
+  }
+  @media (max-width: 520px) {
+    .app { padding:9px; }
+    header { border-radius:17px; margin-bottom:13px; }
+    .logo { width:45px; height:45px; font-size:24px; border-radius:14px; }
+    .subtitle { font-size:11px; }
+    .panel { border-radius:17px; }
+    .panel-head { padding:17px 16px 12px; }
+    .product-list { grid-template-columns:1fr; padding:11px; gap:10px; }
+    .product { padding:13px; }
+    .summary-top { padding:12px 12px 0; }
+    .order-list, .materials { padding-left:13px; padding-right:13px; }
+    .bottom-actions { padding:12px 13px 14px; }
+    .stat { padding:12px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">🔮</div>
+      <div>
+        <h1>Mystic Spells</h1>
+        <div class="subtitle">CRAFT & ORDER MANAGER　｜　クラフト管理</div>
+      </div>
+    </div>
+    <div class="header-note">魔法のアイテムを、すっきり管理。<br>注文数から必要素材を自動計算します。</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>✦ 商品を注文に追加</h2>
+        <p>個数ボタンをタップすると、その数を注文に追加します。</p>
+      </div>
+      <div class="product-list" id="productList"></div>
+    </section>
+
+    <div class="right-column">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>🧾 注文一覧</h2>
+          <p>追加した商品の個数・金額を確認できます。</p>
+        </div>
+        <div class="summary-top">
+          <div class="stat">
+            <div class="stat-label">合計個数</div>
+            <div class="stat-value" id="totalQty">0 個</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">合計金額</div>
+            <div class="stat-value" id="totalPrice">¥0</div>
+          </div>
+        </div>
+        <div class="order-list" id="orderList">
+          <div class="empty">まだ注文がありません。<br>左の商品から個数を選んでね。</div>
+        </div>
+        <div class="bottom-actions">
+          <div class="hint">− / ＋で1個ずつ調整できます。<br>×で商品ごとに削除できます。</div>
+          <button class="reset-btn" id="resetBtn" type="button">注文をリセット</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>🪄 必要素材</h2>
+          <p>注文数に応じた素材の合計です。</p>
+        </div>
+        <div class="materials" id="materials">
+          <div class="no-materials">注文を追加すると、必要な素材がここに表示されます。</div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer>Mystic Spells　—　Craft & Order Manager</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const products = [
+  { id: "rose", name: "Rose", emoji: "🩷", recovery: "🛡️ 10%回復", price: 60000, materials: { "月光の薔薇": 3, "魔力の雫": 2 } },
+  { id: "amethyst", name: "Amethyst", emoji: "💜", recovery: "🛡️ 20%回復", price: 90000, materials: { "紫水晶の欠片": 4, "魔力の結晶": 2 } },
+  { id: "celestial", name: "Celestial", emoji: "🩵", recovery: "🛡️ 30%回復", price: 120000, materials: { "星の雫": 3, "星屑の粉": 4, "月光の結晶": 2 } },
+  { id: "solaris", name: "Solaris", emoji: "💛", recovery: "🛡️ 40%回復", price: 160000, materials: { "太陽石": 4, "太陽のエッセンス": 3, "魔力の結晶": 3 } },
+  { id: "phoenix", name: "Phoenix", emoji: "❤️", recovery: "🛡️ 50%回復", price: 200000, materials: { "不死鳥の羽根": 2, "永遠の炎": 3, "古代の魔法石": 5 } },
+  { id: "fortuna", name: "Fortuna Arcana", emoji: "🌈", recovery: "🍚10% + 💧10%", price: 100000, materials: { "幸運のクローバー": 3, "虹色の砂糖": 2, "星屑の粉": 2 } }
+];
+const quickAmounts = [1, 5, 10];
+const orders = {};
+const yen = n => "¥" + n.toLocaleString("ja-JP");
+
+function renderProducts() {
+  const root = document.getElementById("productList");
+  root.innerHTML = products.map(p => `
+    <article class="product">
+      <div class="product-top">
+        <div class="emoji">${p.emoji}</div>
+        <div>
+          <h3>${p.name}</h3>
+          <div style="margin-top:4px;font-size:12px;color:#8a70ac;font-weight:700">${p.recovery}</div>
+          <div class="price">${yen(p.price)} <span style="font-weight:400;color:#91859f">/ 1個</span></div>
+        </div>
+      </div>
+      <p class="quick-label">ワンタップで追加</p>
+      <div class="quick-buttons">
+        ${quickAmounts.map(n => `<button type="button" data-id="${p.id}" data-qty="${n}" aria-label="${p.name}を${n}個追加">${n}</button>`).join("")}
+      </div>
+      <form class="custom-row" data-form="${p.id}">
+        <input type="number" min="1" step="1" inputmode="numeric" placeholder="その他の個数を入力" aria-label="${p.name}の個数">
+        <button class="add-btn" type="submit">追加</button>
+      </form>
+    </article>
+  `).join("");
+  root.querySelectorAll("[data-qty]").forEach(btn => btn.addEventListener("click", () => addOrder(btn.dataset.id, Number(btn.dataset.qty))));
+  root.querySelectorAll("[data-form]").forEach(form => form.addEventListener("submit", e => {
+    e.preventDefault();
+    const input = form.querySelector("input");
+    const qty = Number(input.value);
+    if (!Number.isSafeInteger(qty) || qty < 1) { showToast("1以上の整数を入力してね"); input.focus(); return; }
+    addOrder(form.dataset.form, qty);
+    input.value = "";
+  }));
+}
+function addOrder(id, qty) {
+  orders[id] = (orders[id] || 0) + qty;
+  renderSummary();
+  const p = products.find(x => x.id === id);
+  showToast(`${p.name}を${qty}個追加しました`);
+}
+function changeQty(id, delta) {
+  const next = (orders[id] || 0) + delta;
+  if (next <= 0) delete orders[id]; else orders[id] = next;
+  renderSummary();
+}
+function removeOrder(id) {
+  delete orders[id];
+  renderSummary();
+}
+function renderSummary() {
+  const selected = products.filter(p => orders[p.id] > 0);
+  const totalQty = selected.reduce((sum, p) => sum + orders[p.id], 0);
+  const totalPrice = selected.reduce((sum, p) => sum + orders[p.id] * p.price, 0);
+  document.getElementById("totalQty").textContent = `${totalQty.toLocaleString("ja-JP")} 個`;
+  document.getElementById("totalPrice").textContent = yen(totalPrice);
+
+  const orderRoot = document.getElementById("orderList");
+  if (!selected.length) {
+    orderRoot.innerHTML = '<div class="empty">まだ注文がありません。<br>左の商品から個数を選んでね。</div>';
+  } else {
+    orderRoot.innerHTML = selected.map(p => `
+      <div class="order-item">
+        <div>
+          <div class="order-name">${p.emoji} ${p.name} <span style="font-size:11px;color:#8a70ac;font-weight:700">${p.recovery}</span></div>
+          <div class="order-price">${yen(p.price)} × ${orders[p.id].toLocaleString("ja-JP")}個 ＝ <strong>${yen(p.price * orders[p.id])}</strong></div>
+        </div>
+        <div class="order-controls">
+          <button class="small-btn" type="button" data-change="${p.id}" data-delta="-1" aria-label="${p.name}を1個減らす">−</button>
+          <span class="qty">${orders[p.id].toLocaleString("ja-JP")}</span>
+          <button class="small-btn" type="button" data-change="${p.id}" data-delta="1" aria-label="${p.name}を1個増やす">＋</button>
+          <button class="remove-btn" type="button" data-remove="${p.id}" aria-label="${p.name}を削除">×</button>
+        </div>
+      </div>
+    `).join("");
+    orderRoot.querySelectorAll("[data-change]").forEach(btn => btn.addEventListener("click", () => changeQty(btn.dataset.change, Number(btn.dataset.delta))));
+    orderRoot.querySelectorAll("[data-remove]").forEach(btn => btn.addEventListener("click", () => removeOrder(btn.dataset.remove)));
+  }
+
+  const totals = {};
+  selected.forEach(p => Object.entries(p.materials).forEach(([name, amount]) => {
+    totals[name] = (totals[name] || 0) + amount * orders[p.id];
+  }));
+  const materialRoot = document.getElementById("materials");
+  const materialNames = Object.keys(totals).sort((a, b) => a.localeCompare(b, "ja"));
+  materialRoot.innerHTML = materialNames.length
+    ? materialNames.map(name => `<div class="material-row"><span>${name}</span><span class="material-count">${totals[name].toLocaleString("ja-JP")} 個</span></div>`).join("")
+    : '<div class="no-materials">注文を追加すると、必要な素材がここに表示されます。</div>';
+}
+function showToast(message) {
+  const el = document.getElementById("toast");
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => el.classList.remove("show"), 1600);
+}
+document.getElementById("resetBtn").addEventListener("click", () => {
+  // モバイルのプレビュー環境で確認ダイアログが動かない場合に備え、即時リセット
+  Object.keys(orders).forEach(k => delete orders[k]);
+  document.querySelectorAll(".custom-row input").forEach(input => input.value = "");
+  renderSummary();
+  showToast("注文をリセットしました");
+});
+renderProducts();
+renderSummary();
+</script>
+</body>
+</html>

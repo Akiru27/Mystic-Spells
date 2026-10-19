@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f5efff">
-<title>Mystic Spells｜クラフト管理</title>
+<title>Mystic Spells｜注文管理・購入集計</title>
 <style>
   :root {
     --ink: #453b58;
@@ -56,7 +56,7 @@
   .product h3 { margin:0; font-size:15px; overflow-wrap:anywhere; }
   .product .price { margin-top:4px; font-size:13px; color:var(--purple-dark); font-weight:700; }
   .quick-label { color:var(--muted); font-size:11px; margin:0 0 7px; }
-  .quick-buttons { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+  .quick-buttons { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; }
   .quick-buttons button {
     border:1px solid #e6dcef; background:#faf7fd; color:#6f588b; border-radius:9px;
     padding:8px 0; font-weight:700; font-size:12px;
@@ -122,6 +122,54 @@
     .bottom-actions { padding:12px 13px 14px; }
     .stat { padding:12px; }
   }
+
+  .record-btn { border:0; border-radius:10px; padding:10px 14px; color:#fff; background:var(--purple); font-weight:700; white-space:nowrap; }
+  .record-btn:hover { background:var(--purple-dark); }
+  .record-btn:disabled { opacity:.45; cursor:not-allowed; }
+  .analytics-panel { margin-top:20px; }
+  .analytics-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 18px 0; }
+  .week-pill { background:#f3ecfa; color:#6f5598; border-radius:999px; padding:7px 11px; font-size:12px; font-weight:700; }
+  .export-btn { border:1px solid #e5d9ef; border-radius:9px; padding:8px 11px; background:#fff; color:#715a8e; font-weight:700; font-size:12px; }
+  .analytics-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:14px 18px; }
+  .analytics-stat { background:#faf7fd; border:1px solid #eee5f6; border-radius:14px; padding:12px; min-width:0; }
+  .analytics-stat .stat-value { font-size:clamp(17px,2vw,23px); }
+  .trend-content { padding:0 18px 18px; }
+  .trend-title { font-size:14px; font-weight:800; margin:8px 0 12px; }
+  .trend-row { display:grid; grid-template-columns:minmax(100px,1fr) minmax(70px,2fr) auto; gap:10px; align-items:center; margin:12px 0; font-size:12px; }
+  .trend-name { overflow-wrap:anywhere; }
+  .bar-track { height:10px; border-radius:99px; background:#f0eaf6; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#c9b2e7,#e8b9d7); }
+  .trend-qty { font-weight:800; color:var(--purple-dark); white-space:nowrap; }
+  .comparison { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+  .comparison-card { border:1px solid #eee5f6; border-radius:13px; padding:12px; background:#fff; }
+  .comparison-card strong { display:block; margin-top:5px; font-size:15px; }
+  .history-list { border-top:1px solid #f1ebf6; padding:12px 18px 16px; }
+  .history-entry { padding:10px 0; border-bottom:1px solid #f1ebf6; font-size:12px; line-height:1.7; }
+  .history-entry:last-child { border-bottom:0; }
+  .history-date { color:var(--muted); }
+  .analytics-empty { color:#9a8eaa; font-size:13px; line-height:1.8; padding:10px 0; }
+  @media (max-width:520px) { .analytics-stats {grid-template-columns:1fr;padding:12px 13px;} .trend-content,.history-list {padding-left:13px;padding-right:13px;} .analytics-controls {padding-left:13px;padding-right:13px;} .trend-row {grid-template-columns:minmax(82px,1fr) minmax(45px,1.2fr) auto;gap:7px;} }
+
+
+  .tab-nav{display:flex;gap:8px;margin:0 0 18px;padding:6px;border:1px solid #eee5f6;border-radius:16px;background:rgba(255,255,255,.86);box-shadow:var(--shadow)}
+  .tab-button{flex:1;border:0;border-radius:11px;padding:13px 16px;background:transparent;color:var(--muted);font-weight:800}
+  .tab-button.active{background:linear-gradient(135deg,#eee4f9,#fbeaf3);color:var(--purple-dark)}
+  .tab-pane[hidden]{display:none!important}
+  .cloud-panel{margin-top:20px}
+  .cloud-body{padding:16px 18px 20px;display:grid;gap:9px}
+  .cloud-body label{font-size:12px;font-weight:800;color:var(--muted);margin-top:4px}
+  .cloud-body input{width:100%;min-width:0;border:1px solid #e4dbee;border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}
+  .cloud-body input:focus{outline:2px solid #e7d8f6;border-color:#bba1d9}
+  .cloud-status{border-radius:11px;padding:11px 12px;background:#f7f2fc;color:#6f5598;font-size:12px;line-height:1.6}
+  .cloud-status.connected{background:#edf8f2;color:#38765d}
+  .cloud-status.error{background:#fff0f2;color:#a34d62}
+  .cloud-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:5px}
+  .cloud-help{font-size:12px;color:var(--muted);line-height:1.8;margin:3px 0 0}
+  .setup-details{border:1px solid #eee5f6;border-radius:12px;padding:12px;margin-top:8px;font-size:12px;line-height:1.8}
+  .setup-details summary{cursor:pointer;font-weight:800;color:var(--purple-dark)}
+  .setup-details pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f8f5fc;border-radius:8px;padding:10px;font-size:11px}
+  @media(max-width:520px){.tab-nav{margin-bottom:12px}.tab-button{padding:12px 8px;font-size:13px}.cloud-body{padding:13px}}
+
 </style>
 </head>
 <body>
@@ -137,7 +185,12 @@
     <div class="header-note">魔法のアイテムを、すっきり管理。<br>注文数から必要素材を自動計算します。</div>
   </header>
 
-  <main class="layout">
+  <nav class="tab-nav" role="tablist" aria-label="アプリの画面">
+    <button class="tab-button active" id="tabOrderBtn" type="button" role="tab" aria-selected="true">🛍️ 注文管理</button>
+    <button class="tab-button" id="tabStatsBtn" type="button" role="tab" aria-selected="false">📊 購入集計</button>
+  </nav>
+  <section id="orderTab" class="tab-pane active">
+    <main class="layout">
     <section class="panel">
       <div class="panel-head">
         <h2>✦ 商品を注文に追加</h2>
@@ -166,8 +219,11 @@
           <div class="empty">まだ注文がありません。<br>左の商品から個数を選んでね。</div>
         </div>
         <div class="bottom-actions">
-          <div class="hint">− / ＋で1個ずつ調整できます。<br>×で商品ごとに削除できます。</div>
-          <button class="reset-btn" id="resetBtn" type="button">注文をリセット</button>
+          <div class="hint">− / ＋で1個ずつ調整できます。<br>購入確定したら「購入を記録」を押してね。</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">
+            <button class="record-btn" id="recordPurchaseBtn" type="button" disabled>購入を記録</button>
+            <button class="reset-btn" id="resetBtn" type="button">注文をリセット</button>
+          </div>
         </div>
       </section>
 
@@ -182,6 +238,51 @@
       </section>
     </div>
   </main>
+  </section>
+  <section id="statsTab" class="tab-pane" hidden>
+    <section class="panel analytics-panel">
+    <div class="panel-head"><h2>📊 週ごとの購入傾向</h2><p>「購入を記録」した注文だけを集計します。週の区切りは月曜日〜日曜日です。</p></div>
+    <div class="analytics-controls"><span class="week-pill" id="currentWeekLabel">今週</span><button class="export-btn" id="exportCsvBtn" type="button">購入履歴をCSV出力</button></div>
+    <div class="analytics-stats">
+      <div class="analytics-stat"><div class="stat-label">今週の購入個数</div><div class="stat-value" id="weekQty">0 個</div></div>
+      <div class="analytics-stat"><div class="stat-label">今週の購入金額</div><div class="stat-value" id="weekSales">¥0</div></div>
+      <div class="analytics-stat"><div class="stat-label">今週いちばん人気</div><div class="stat-value" id="weekPopular" style="font-size:18px">—</div></div>
+    </div>
+    <div class="trend-content"><div class="trend-title">商品別の購入個数</div><div id="weeklyChart" class="analytics-empty">購入を記録すると、商品ごとの傾向が表示されます。</div>
+      <div class="comparison"><div class="comparison-card"><div class="stat-label">先週の購入個数</div><strong id="lastWeekQty">0 個</strong></div><div class="comparison-card"><div class="stat-label">先週比（購入個数）</div><strong id="weekChange">—</strong></div></div>
+    </div>
+    <div class="history-list"><div class="trend-title">最近の購入記録</div><div id="purchaseHistory" class="analytics-empty">まだ購入記録がありません。</div></div>
+  </section>
+    <section class="panel cloud-panel">
+      <div class="panel-head"><h2>☁️ PC・スマホのデータ共有</h2><p>クラウド設定を行うと、購入記録を両方の端末で共有できます。</p></div>
+      <div class="cloud-body">
+        <div id="cloudStatus" class="cloud-status">未設定：この端末内の購入履歴を表示しています。</div>
+        <label for="supabaseUrl">Supabase Project URL</label>
+        <input id="supabaseUrl" type="url" placeholder="https://xxxx.supabase.co" autocomplete="url">
+        <label for="supabaseKey">Supabase anon / publishable key</label>
+        <input id="supabaseKey" type="password" placeholder="Supabaseの公開用キー" autocomplete="off">
+        <div class="cloud-actions"><button class="record-btn" id="saveCloudConfig" type="button">接続設定を保存</button><button class="export-btn" id="syncCloudNow" type="button">今すぐ同期</button></div>
+        <p class="cloud-help">同じProject URLと公開用キーをPC・スマホ両方に設定してください。Supabase側でテーブルとアクセス権限の設定が必要です。service_roleなどの秘密鍵は絶対に入力しないでください。</p>
+        <details class="setup-details">
+          <summary>Supabase側のテーブル設定</summary>
+          <p>SupabaseのSQL Editorで実行してください。この簡易設定では、アプリを使える人が購入履歴を閲覧・追加できます。機密情報は保存しないでください。</p>
+          <pre><code>create table if not exists public.purchase_records (
+  id text primary key,
+  purchased_at timestamptz not null,
+  items jsonb not null
+);
+
+alter table public.purchase_records enable row level security;
+
+create policy "Public can read purchase records"
+on public.purchase_records for select to anon using (true);
+
+create policy "Public can insert purchase records"
+on public.purchase_records for insert to anon with check (true);</code></pre>
+        </details>
+      </div>
+    </section>
+  </section>
   <footer>Mystic Spells　—　Craft & Order Manager</footer>
 </div>
 <div class="toast" id="toast"></div>
@@ -299,8 +400,128 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   renderSummary();
   showToast("注文をリセットしました");
 });
+// 購入記録はブラウザ内に保存。注文リセットとは別管理です。
+const PURCHASE_STORAGE_KEY = "mysticSpellsPurchaseHistory_v1";
+let purchaseHistory = loadPurchaseHistory();
+function loadPurchaseHistory() {
+  try { const d=JSON.parse(localStorage.getItem(PURCHASE_STORAGE_KEY)||"[]"); return Array.isArray(d)?d.filter(x=>x&&x.date&&x.items):[]; }
+  catch(e) { return []; }
+}
+function savePurchaseHistory() {
+  try { localStorage.setItem(PURCHASE_STORAGE_KEY,JSON.stringify(purchaseHistory)); return true; }
+  catch(e) { showToast("保存できませんでした。ブラウザの保存設定を確認してね"); return false; }
+}
+function mondayOf(date) { const d=new Date(date); d.setHours(0,0,0,0); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d; }
+function dateKey(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
+function weekKey(value) { return dateKey(mondayOf(new Date(value))); }
+function fmtDate(value) { const d=new Date(value); return `${dateKey(d).replaceAll("-","/")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
+function summarizeWeek(key) {
+  const r={qty:0,sales:0,items:{}};
+  purchaseHistory.forEach(entry=>{ if(weekKey(entry.date)!==key)return; Object.entries(entry.items).forEach(([id,qty])=>{const p=products.find(x=>x.id===id);if(!p||qty<=0)return;r.items[id]=(r.items[id]||0)+qty;r.qty+=qty;r.sales+=p.price*qty;}); });
+  return r;
+}
+function renderAnalytics() {
+  const monday=mondayOf(new Date()), sunday=new Date(monday); sunday.setDate(sunday.getDate()+6);
+  const thisKey=dateKey(monday), lastMonday=new Date(monday); lastMonday.setDate(lastMonday.getDate()-7);
+  const current=summarizeWeek(thisKey), previous=summarizeWeek(dateKey(lastMonday));
+  document.getElementById("currentWeekLabel").textContent=`今週：${dateKey(monday).replaceAll("-","/")}〜${dateKey(sunday).replaceAll("-","/")}`;
+  document.getElementById("weekQty").textContent=`${current.qty.toLocaleString("ja-JP")} 個`;
+  document.getElementById("weekSales").textContent=yen(current.sales);
+  const ranked=products.map(p=>({p,qty:current.items[p.id]||0})).sort((a,b)=>b.qty-a.qty);
+  document.getElementById("weekPopular").textContent=ranked[0]?.qty?`${ranked[0].p.emoji} ${ranked[0].p.name}`:"—";
+  const max=Math.max(1,...ranked.map(x=>x.qty));
+  document.getElementById("weeklyChart").innerHTML=current.qty?ranked.map(({p,qty})=>`<div class="trend-row"><span class="trend-name">${p.emoji} ${p.name}</span><div class="bar-track"><div class="bar-fill" style="width:${qty/max*100}%"></div></div><span class="trend-qty">${qty} 個</span></div>`).join(""):'<div class="analytics-empty">今週の購入記録はまだありません。注文を作成して「購入を記録」を押してね。</div>';
+  document.getElementById("lastWeekQty").textContent=`${previous.qty.toLocaleString("ja-JP")} 個`;
+  let change="比較データなし"; if(previous.qty>0) change=`${current.qty>previous.qty?"+":""}${((current.qty-previous.qty)/previous.qty*100).toFixed(1)}%`; else if(current.qty>0) change="先週購入なし";
+  document.getElementById("weekChange").textContent=change;
+  const recent=[...purchaseHistory].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+  document.getElementById("purchaseHistory").innerHTML=recent.length?recent.map(entry=>{const detail=Object.entries(entry.items).map(([id,q])=>{const p=products.find(x=>x.id===id);return p?`${p.emoji} ${p.name} × ${q}`:""}).filter(Boolean).join("、");const total=Object.entries(entry.items).reduce((sum,[id,q])=>sum+(products.find(p=>p.id===id)?.price||0)*q,0);return `<div class="history-entry"><div class="history-date">${fmtDate(entry.date)}</div><div>${detail}</div><strong>${yen(total)}</strong></div>`}).join(""):'<div class="analytics-empty">まだ購入記録がありません。</div>';
+}
+const CLOUD_CONFIG_KEY="mysticSpellsCloudConfig_v1";
+let cloudConfig=(()=>{try{return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY)||"null")||{url:"",key:""}}catch(e){return {url:"",key:""}}})();
+let cloudSyncBusy=false;
+function cloudReady(){return Boolean(cloudConfig.url&&cloudConfig.key)}
+function setCloudStatus(message,type=""){const el=document.getElementById("cloudStatus");if(el){el.textContent=message;el.className="cloud-status"+(type?" "+type:"")}}
+function normalizedCloudUrl(value){return value.trim().replace(/\/+$/,"")}
+async function cloudRequest(path,options={}){
+  if(!cloudReady())throw new Error("クラウド接続設定がありません");
+  const response=await fetch(`${normalizedCloudUrl(cloudConfig.url)}/rest/v1/${path}`,{
+    ...options,
+    headers:{"apikey":cloudConfig.key,"Authorization":`Bearer ${cloudConfig.key}`,"Content-Type":"application/json","Prefer":"return=minimal",...(options.headers||{})}
+  });
+  if(!response.ok){const detail=await response.text().catch(()=> "");throw new Error(`HTTP ${response.status}: ${detail.slice(0,160)}`)}
+  if(response.status===204||response.status===201)return null;
+  return response.json().catch(()=>null);
+}
+async function syncFromCloud(){
+  if(!cloudReady()||cloudSyncBusy)return;
+  cloudSyncBusy=true;setCloudStatus("クラウドから購入記録を読み込み中…");
+  try{
+    const rows=await cloudRequest("purchase_records?select=id,purchased_at,items&order=purchased_at.desc");
+    const merged=new Map(purchaseHistory.map(e=>[e.id,e]));
+    (rows||[]).forEach(row=>merged.set(row.id,{id:row.id,date:row.purchased_at,items:row.items}));
+    purchaseHistory=Array.from(merged.values()).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    savePurchaseHistory();renderAnalytics();
+    setCloudStatus(`接続済み：クラウドの購入記録 ${purchaseHistory.length} 件を読み込みました。`,"connected");
+  }catch(error){setCloudStatus(`同期できませんでした：${error.message}`,"error")}
+  finally{cloudSyncBusy=false}
+}
+document.getElementById("recordPurchaseBtn").addEventListener("click", async ()=>{
+  const items={}; products.forEach(p=>{const q=Number(orders[p.id]||0);if(Number.isSafeInteger(q)&&q>0)items[p.id]=q;});
+  if(!Object.keys(items).length){showToast("記録する注文がありません");return;}
+  const entry={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,date:new Date().toISOString(),items};
+  if(cloudReady()){
+    try{
+      await cloudRequest("purchase_records",{method:"POST",headers:{"Prefer":"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({id:entry.id,purchased_at:entry.date,items:entry.items})});
+      purchaseHistory.push(entry);savePurchaseHistory();renderAnalytics();
+      Object.keys(orders).forEach(k=>delete orders[k]);document.querySelectorAll(".custom-row input").forEach(x=>x.value="");renderSummary();
+      setCloudStatus("接続済み：購入記録をクラウドに保存しました。","connected");showToast("購入を記録して注文をクリアしました");
+    }catch(error){setCloudStatus(`保存できませんでした：${error.message}`,"error");showToast("クラウド保存に失敗しました。注文は残しています");}
+  }else{
+    purchaseHistory.push(entry);
+    if(savePurchaseHistory()){renderAnalytics();Object.keys(orders).forEach(k=>delete orders[k]);document.querySelectorAll(".custom-row input").forEach(x=>x.value="");renderSummary();showToast("端末内に購入を記録しました");}
+    else purchaseHistory.pop();
+  }
+});
+document.getElementById("exportCsvBtn").addEventListener("click",()=>{
+  if(!purchaseHistory.length){showToast("出力する購入記録がありません");return;}
+  const rows=[["購入日時","商品","個数","単価","小計"]];
+  [...purchaseHistory].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>Object.entries(e.items).forEach(([id,q])=>{const p=products.find(x=>x.id===id);if(p)rows.push([fmtDate(e.date),p.name,q,p.price,p.price*q]);}));
+  const csv="\uFEFF"+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`MysticSpells_購入履歴_${dateKey(new Date()).replaceAll("-","")}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast("購入履歴CSVを出力しました");
+});
+const baseRenderSummary=renderSummary;
+renderSummary=function(){baseRenderSummary();document.getElementById("recordPurchaseBtn").disabled=!products.some(p=>(orders[p.id]||0)>0);};
+function activateTab(which){
+  const order=which==="order";
+  document.getElementById("orderTab").hidden=!order;
+  document.getElementById("statsTab").hidden=order;
+  document.getElementById("tabOrderBtn").classList.toggle("active",order);
+  document.getElementById("tabStatsBtn").classList.toggle("active",!order);
+  document.getElementById("tabOrderBtn").setAttribute("aria-selected",String(order));
+  document.getElementById("tabStatsBtn").setAttribute("aria-selected",String(!order));
+}
+document.getElementById("tabOrderBtn").addEventListener("click",()=>activateTab("order"));
+document.getElementById("tabStatsBtn").addEventListener("click",()=>activateTab("stats"));
+document.getElementById("saveCloudConfig").addEventListener("click",async()=>{
+  const url=normalizedCloudUrl(document.getElementById("supabaseUrl").value);
+  const key=document.getElementById("supabaseKey").value.trim();
+  if(!/^https:\/\/[a-zA-Z0-9.-]+\.supabase\.co$/.test(url)||!key){
+    setCloudStatus("Project URLとanon / publishable keyを正しく入力してください。","error");return;
+  }
+  cloudConfig={url,key};localStorage.setItem(CLOUD_CONFIG_KEY,JSON.stringify(cloudConfig));
+  await syncFromCloud();
+});
+document.getElementById("syncCloudNow").addEventListener("click",syncFromCloud);
+if(cloudConfig.url&&cloudConfig.key){
+  document.getElementById("supabaseUrl").value=cloudConfig.url;
+  document.getElementById("supabaseKey").value=cloudConfig.key;
+  setCloudStatus("保存済みの接続設定があります。同期を確認中…");
+}
 renderProducts();
 renderSummary();
+renderAnalytics();
+if(cloudReady())syncFromCloud();
 </script>
 </body>
 </html>

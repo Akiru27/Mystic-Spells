@@ -27,6 +27,18 @@
   button, input { font: inherit; }
   button { cursor: pointer; }
   .app { max-width: 1440px; margin: 0 auto; padding: 22px; }
+  #appShell[hidden],#loginScreen[hidden]{display:none!important}
+  .login-screen{min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(145deg,#f8f1ff,#fff7fb)}
+  .login-card{width:min(100%,420px);background:#fff;border:1px solid #eee5f6;border-radius:24px;padding:28px;box-shadow:var(--shadow)}
+  .login-logo{width:60px;height:60px;border-radius:19px;display:grid;place-items:center;margin:0 auto 15px;background:linear-gradient(135deg,#eadcf9,#fbe7f3);font-size:30px}
+  .login-card h1{text-align:center;font-size:25px}
+  .login-card p{text-align:center;color:var(--muted);font-size:13px;line-height:1.8;margin:8px 0 22px}
+  .login-card label{display:block;color:var(--muted);font-size:12px;font-weight:800;margin:0 0 7px}
+  .login-card input{width:100%;border:1px solid #e4dbee;border-radius:11px;padding:13px 12px;margin-bottom:12px;color:var(--ink)}
+  .login-card button{width:100%;border:0;border-radius:11px;padding:13px;background:var(--purple);color:#fff;font-weight:800}
+  .login-card button:disabled{opacity:.6}
+  .login-error{color:#a34d62;background:#fff0f2;border-radius:10px;padding:10px;font-size:12px;line-height:1.6;margin:0 0 12px}
+  .logout-btn{border:1px solid #e7d9e9;border-radius:10px;padding:8px 12px;background:#fff8fc;color:#8b637f;font-weight:700;font-size:12px}
   header {
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     padding: 22px 26px; border: 1px solid #eee5f6; border-radius: 22px;
@@ -106,7 +118,7 @@
     .layout { grid-template-columns:1fr; }
     .right-column { grid-template-columns:1fr; }
     header { padding:17px; }
-    .header-note { display:none; }
+    .header-note { display:block; font-size:10px; }
   }
   @media (max-width: 520px) {
     .app { padding:9px; }
@@ -173,7 +185,18 @@
 </style>
 </head>
 <body>
-<div class="app">
+<section id="loginScreen" class="login-screen">
+  <form id="loginForm" class="login-card">
+    <div class="login-logo">✨</div>
+    <h1>Mystic Spells</h1>
+    <p>スタッフ専用ログイン<br>共通パスワードを入力してください。</p>
+    <div id="loginError" class="login-error" hidden></div>
+    <label for="staffPassword">共通パスワード</label>
+    <input id="staffPassword" type="password" autocomplete="current-password" placeholder="パスワードを入力" required>
+    <button id="loginButton" type="submit">ログイン</button>
+  </form>
+</section>
+<div class="app" id="appShell" hidden>
   <header>
     <div class="brand">
       <div class="logo">🔮</div>
@@ -183,6 +206,7 @@
       </div>
     </div>
     <div class="header-note">魔法のアイテムを、すっきり管理。<br>注文数から必要素材を自動計算します。</div>
+    <button class="logout-btn" id="logoutBtn" type="button">ログアウト</button>
   </header>
 
   <nav class="tab-nav" role="tablist" aria-label="アプリの画面">
@@ -254,32 +278,11 @@
     <div class="history-list"><div class="trend-title">最近の購入記録</div><div id="purchaseHistory" class="analytics-empty">まだ購入記録がありません。</div></div>
   </section>
     <section class="panel cloud-panel">
-      <div class="panel-head"><h2>☁️ PC・スマホのデータ共有</h2><p>クラウド設定を行うと、購入記録を両方の端末で共有できます。</p></div>
+      <div class="panel-head"><h2>☁️ PC・スマホのデータ共有</h2><p>スタッフログイン後、購入記録をクラウドで共有します。</p></div>
       <div class="cloud-body">
-        <div id="cloudStatus" class="cloud-status">未設定：この端末内の購入履歴を表示しています。</div>
-        <label for="supabaseUrl">Supabase Project URL</label>
-        <input id="supabaseUrl" type="url" placeholder="https://xxxx.supabase.co" autocomplete="url">
-        <label for="supabaseKey">Supabase anon / publishable key</label>
-        <input id="supabaseKey" type="password" placeholder="Supabaseの公開用キー" autocomplete="off">
-        <div class="cloud-actions"><button class="record-btn" id="saveCloudConfig" type="button">接続設定を保存</button><button class="export-btn" id="syncCloudNow" type="button">今すぐ同期</button></div>
-        <p class="cloud-help">同じProject URLと公開用キーをPC・スマホ両方に設定してください。Supabase側でテーブルとアクセス権限の設定が必要です。service_roleなどの秘密鍵は絶対に入力しないでください。</p>
-        <details class="setup-details">
-          <summary>Supabase側のテーブル設定</summary>
-          <p>SupabaseのSQL Editorで実行してください。この簡易設定では、アプリを使える人が購入履歴を閲覧・追加できます。機密情報は保存しないでください。</p>
-          <pre><code>create table if not exists public.purchase_records (
-  id text primary key,
-  purchased_at timestamptz not null,
-  items jsonb not null
-);
-
-alter table public.purchase_records enable row level security;
-
-create policy "Public can read purchase records"
-on public.purchase_records for select to anon using (true);
-
-create policy "Public can insert purchase records"
-on public.purchase_records for insert to anon with check (true);</code></pre>
-        </details>
+        <div id="cloudStatus" class="cloud-status">ログイン後にクラウドへ接続します。</div>
+        <div class="cloud-actions"><button class="export-btn" id="syncCloudNow" type="button">今すぐ同期</button></div>
+        <p class="cloud-help">購入記録はSupabaseに保存され、同じスタッフアカウントでログインしたPC・スマホから確認できます。アクセス権限はログイン済みユーザーに限定しています。</p>
       </div>
     </section>
   </section>
@@ -437,51 +440,91 @@ function renderAnalytics() {
   const recent=[...purchaseHistory].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
   document.getElementById("purchaseHistory").innerHTML=recent.length?recent.map(entry=>{const detail=Object.entries(entry.items).map(([id,q])=>{const p=products.find(x=>x.id===id);return p?`${p.emoji} ${p.name} × ${q}`:""}).filter(Boolean).join("、");const total=Object.entries(entry.items).reduce((sum,[id,q])=>sum+(products.find(p=>p.id===id)?.price||0)*q,0);return `<div class="history-entry"><div class="history-date">${fmtDate(entry.date)}</div><div>${detail}</div><strong>${yen(total)}</strong></div>`}).join(""):'<div class="analytics-empty">まだ購入記録がありません。</div>';
 }
-const CLOUD_CONFIG_KEY="mysticSpellsCloudConfig_v1";
-let cloudConfig=(()=>{try{return JSON.parse(localStorage.getItem(CLOUD_CONFIG_KEY)||"null")||{url:"",key:""}}catch(e){return {url:"",key:""}}})();
+// Supabaseの公開設定。Publishable keyはブラウザ利用用で、secret/service_role keyは絶対に使わない。
+const SUPABASE_URL="https://kquwrjzehmbmlbdynhxt.supabase.co";
+const SUPABASE_KEY="sb_publishable_mFVh_9AxTVkhOJ9ypqIVaQ_Fuv9qPkR";
+// Supabase Authentication > Users に、このメールアドレスのユーザーを作成してください。
+// スタッフ全員はこのアカウントと共通パスワードでログインします。
+const STAFF_EMAIL="mystic-spells-staff@example.com";
+const AUTH_STORAGE_KEY="mysticSpellsSharedAuth_v1";
+let authSession=(()=>{try{return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)||"null")}catch(e){return null}})();
 let cloudSyncBusy=false;
-function cloudReady(){return Boolean(cloudConfig.url&&cloudConfig.key)}
+function cloudReady(){return Boolean(authSession&&authSession.access_token)}
 function setCloudStatus(message,type=""){const el=document.getElementById("cloudStatus");if(el){el.textContent=message;el.className="cloud-status"+(type?" "+type:"")}}
-function normalizedCloudUrl(value){return value.trim().replace(/\/+$/,"")}
-async function cloudRequest(path,options={}){
-  if(!cloudReady())throw new Error("クラウド接続設定がありません");
-  const response=await fetch(`${normalizedCloudUrl(cloudConfig.url)}/rest/v1/${path}`,{
+function showLoginError(message){const el=document.getElementById("loginError");el.textContent=message;el.hidden=false}
+function hideLoginError(){const el=document.getElementById("loginError");el.textContent="";el.hidden=true}
+function showApp(){document.getElementById("loginScreen").hidden=true;document.getElementById("appShell").hidden=false;}
+function showLogin(){document.getElementById("loginScreen").hidden=false;document.getElementById("appShell").hidden=true;}
+function saveAuthSession(session){authSession=session;localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify(session))}
+function clearAuthSession(){authSession=null;localStorage.removeItem(AUTH_STORAGE_KEY)}
+async function authRequest(path,body){
+  const response=await fetch(`${SUPABASE_URL}/auth/v1/${path}`,{method:"POST",headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.msg||data.message||data.error_description||data.error||`ログインエラー (${response.status})`);
+  return data;
+}
+async function signInShared(password){
+  const data=await authRequest("token?grant_type=password",{email:STAFF_EMAIL,password});
+  saveAuthSession({...data,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600)});
+}
+async function refreshSession(){
+  if(!authSession?.refresh_token)return false;
+  try{const data=await authRequest("token?grant_type=refresh_token",{refresh_token:authSession.refresh_token});saveAuthSession({...data,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600)});return true}
+  catch(e){clearAuthSession();return false}
+}
+async function ensureFreshSession(){
+  if(!authSession?.access_token)return false;
+  if(authSession.expires_at && authSession.expires_at>Date.now()/1000+60)return true;
+  return await refreshSession();
+}
+async function cloudRequest(path,options={},retried=false){
+  if(!await ensureFreshSession())throw new Error("ログイン期限が切れました。もう一度ログインしてください。");
+  const response=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
     ...options,
-    headers:{"apikey":cloudConfig.key,"Authorization":`Bearer ${cloudConfig.key}`,"Content-Type":"application/json","Prefer":"return=minimal",...(options.headers||{})}
+    headers:{"apikey":SUPABASE_KEY,"Authorization":`Bearer ${authSession.access_token}`,"Content-Type":"application/json","Prefer":"return=minimal",...(options.headers||{})}
   });
-  if(!response.ok){const detail=await response.text().catch(()=> "");throw new Error(`HTTP ${response.status}: ${detail.slice(0,160)}`)}
+  if(response.status===401&&!retried&&await refreshSession())return cloudRequest(path,options,true);
+  if(!response.ok){const detail=await response.text().catch(()=>"");if(response.status===401){clearAuthSession();showLogin()}throw new Error(`HTTP ${response.status}: ${detail.slice(0,160)}`)}
   if(response.status===204||response.status===201)return null;
   return response.json().catch(()=>null);
 }
 async function syncFromCloud(){
   if(!cloudReady()||cloudSyncBusy)return;
-  cloudSyncBusy=true;setCloudStatus("クラウドから購入記録を読み込み中…");
+  cloudSyncBusy=true;setCloudStatus("クラウドと購入記録を同期中…");
   try{
+    // この端末に残っているローカル記録を先にクラウドへ移行（同じIDは重複登録しない）
+    for(const entry of purchaseHistory){
+      await cloudRequest("purchase_records",{method:"POST",headers:{"Prefer":"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({id:entry.id,purchased_at:entry.date,items:entry.items})});
+    }
     const rows=await cloudRequest("purchase_records?select=id,purchased_at,items&order=purchased_at.desc");
     const merged=new Map(purchaseHistory.map(e=>[e.id,e]));
     (rows||[]).forEach(row=>merged.set(row.id,{id:row.id,date:row.purchased_at,items:row.items}));
     purchaseHistory=Array.from(merged.values()).sort((a,b)=>new Date(a.date)-new Date(b.date));
     savePurchaseHistory();renderAnalytics();
-    setCloudStatus(`接続済み：クラウドの購入記録 ${purchaseHistory.length} 件を読み込みました。`,"connected");
+    setCloudStatus(`接続済み：クラウドの購入記録 ${purchaseHistory.length} 件を同期しました。`,"connected");
   }catch(error){setCloudStatus(`同期できませんでした：${error.message}`,"error")}
   finally{cloudSyncBusy=false}
 }
+document.getElementById("loginForm").addEventListener("submit",async(event)=>{
+  event.preventDefault();hideLoginError();
+  const password=document.getElementById("staffPassword").value;
+  const button=document.getElementById("loginButton");button.disabled=true;button.textContent="ログイン中…";
+  try{await signInShared(password);document.getElementById("staffPassword").value="";showApp();renderProducts();renderSummary();renderAnalytics();await syncFromCloud();}
+  catch(error){showLoginError("ログインできませんでした。共通パスワードとSupabaseのユーザー設定を確認してください。詳細："+error.message)}
+  finally{button.disabled=false;button.textContent="ログイン"}
+});
+document.getElementById("logoutBtn").addEventListener("click",()=>{clearAuthSession();showLogin();setCloudStatus("ログアウトしました。");});
 document.getElementById("recordPurchaseBtn").addEventListener("click", async ()=>{
   const items={}; products.forEach(p=>{const q=Number(orders[p.id]||0);if(Number.isSafeInteger(q)&&q>0)items[p.id]=q;});
   if(!Object.keys(items).length){showToast("記録する注文がありません");return;}
   const entry={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,date:new Date().toISOString(),items};
-  if(cloudReady()){
-    try{
-      await cloudRequest("purchase_records",{method:"POST",headers:{"Prefer":"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({id:entry.id,purchased_at:entry.date,items:entry.items})});
-      purchaseHistory.push(entry);savePurchaseHistory();renderAnalytics();
-      Object.keys(orders).forEach(k=>delete orders[k]);document.querySelectorAll(".custom-row input").forEach(x=>x.value="");renderSummary();
-      setCloudStatus("接続済み：購入記録をクラウドに保存しました。","connected");showToast("購入を記録して注文をクリアしました");
-    }catch(error){setCloudStatus(`保存できませんでした：${error.message}`,"error");showToast("クラウド保存に失敗しました。注文は残しています");}
-  }else{
-    purchaseHistory.push(entry);
-    if(savePurchaseHistory()){renderAnalytics();Object.keys(orders).forEach(k=>delete orders[k]);document.querySelectorAll(".custom-row input").forEach(x=>x.value="");renderSummary();showToast("端末内に購入を記録しました");}
-    else purchaseHistory.pop();
-  }
+  if(!cloudReady()){showToast("ログインしてください");showLogin();return;}
+  try{
+    await cloudRequest("purchase_records",{method:"POST",headers:{"Prefer":"resolution=ignore-duplicates,return=minimal"},body:JSON.stringify({id:entry.id,purchased_at:entry.date,items:entry.items})});
+    purchaseHistory.push(entry);savePurchaseHistory();renderAnalytics();
+    Object.keys(orders).forEach(k=>delete orders[k]);document.querySelectorAll(".custom-row input").forEach(x=>x.value="");renderSummary();
+    setCloudStatus("接続済み：購入記録をクラウドに保存しました。","connected");showToast("購入を記録して注文をクリアしました");
+  }catch(error){setCloudStatus(`保存できませんでした：${error.message}`,"error");showToast("クラウド保存に失敗しました。注文は残しています");}
 });
 document.getElementById("exportCsvBtn").addEventListener("click",()=>{
   if(!purchaseHistory.length){showToast("出力する購入記録がありません");return;}
@@ -503,25 +546,13 @@ function activateTab(which){
 }
 document.getElementById("tabOrderBtn").addEventListener("click",()=>activateTab("order"));
 document.getElementById("tabStatsBtn").addEventListener("click",()=>activateTab("stats"));
-document.getElementById("saveCloudConfig").addEventListener("click",async()=>{
-  const url=normalizedCloudUrl(document.getElementById("supabaseUrl").value);
-  const key=document.getElementById("supabaseKey").value.trim();
-  if(!/^https:\/\/[a-zA-Z0-9.-]+\.supabase\.co$/.test(url)||!key){
-    setCloudStatus("Project URLとanon / publishable keyを正しく入力してください。","error");return;
-  }
-  cloudConfig={url,key};localStorage.setItem(CLOUD_CONFIG_KEY,JSON.stringify(cloudConfig));
-  await syncFromCloud();
-});
 document.getElementById("syncCloudNow").addEventListener("click",syncFromCloud);
-if(cloudConfig.url&&cloudConfig.key){
-  document.getElementById("supabaseUrl").value=cloudConfig.url;
-  document.getElementById("supabaseKey").value=cloudConfig.key;
-  setCloudStatus("保存済みの接続設定があります。同期を確認中…");
-}
-renderProducts();
-renderSummary();
-renderAnalytics();
-if(cloudReady())syncFromCloud();
+renderProducts();renderSummary();renderAnalytics();
+(async()=>{
+  if(authSession?.access_token&&await ensureFreshSession()){
+    showApp();await syncFromCloud();
+  }else{clearAuthSession();showLogin();}
+})();
 </script>
 </body>
 </html>

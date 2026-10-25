@@ -291,40 +291,60 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// 現在の注文対象商品。販売終了商品は注文画面から外し、履歴集計用カタログに残します。
 const products = [
-  { id: "rose", name: "Rose", emoji: "🩷", recovery: "🛡️ 10%回復", price: 60000, materials: { "月光の薔薇": 3, "魔力の雫": 2 } },
   { id: "amethyst", name: "Amethyst", emoji: "💜", recovery: "🛡️ 20%回復", price: 90000, materials: { "紫水晶の欠片": 4, "魔力の結晶": 2 } },
   { id: "celestial", name: "Celestial", emoji: "🩵", recovery: "🛡️ 30%回復", price: 120000, materials: { "星の雫": 3, "星屑の粉": 4, "月光の結晶": 2 } },
-  { id: "solaris", name: "Solaris", emoji: "💛", recovery: "🛡️ 40%回復", price: 160000, materials: { "太陽石": 4, "太陽のエッセンス": 3, "魔力の結晶": 3 } },
   { id: "phoenix", name: "Phoenix", emoji: "❤️", recovery: "🛡️ 50%回復", price: 200000, materials: { "不死鳥の羽根": 2, "永遠の炎": 3, "古代の魔法石": 5 } },
-  { id: "fortuna", name: "Fortuna Arcana", emoji: "🌈", recovery: "🍚10% + 💧10%", price: 100000, materials: { "幸運のクローバー": 3, "虹色の砂糖": 2, "星屑の粉": 2 } }
+  { id: "fortuna", name: "Fortuna Arcana", emoji: "🌈", recovery: "🍚10% + 💧10%", price: 100000, materials: { "幸運のクローバー": 3, "虹色の砂糖": 2, "星屑の粉": 2 } },
+  { id: "sylvan", name: "Sylvan", emoji: "💚", recovery: "🛡️ アーマー持続回復", price: 200000, materials: { "月光の薔薇": 3, "魔力の雫": 2 } },
+  { id: "pure", name: "Pure", emoji: "🤍", recovery: "ストレス回復", price: 100000, materials: { "月光の薔薇": 3, "星屑の粉": 4, "魔力の雫": 2 } },
+  { id: "umbriel", name: "Umbriel", emoji: "🖤", recovery: "加速", price: 100000, materials: { "太陽石": 4, "太陽のエッセンス": 3, "魔力の結晶": 3 } },
+  { id: "hearthlight", name: "Hearthlight", emoji: "🕯️", recovery: "HP持続回復", price: 200000, materials: { "月光の薔薇": 3, "幸運のクローバー": 3, "虹色の砂糖": 2 }, limited: true, saleStart: "2026-11-02", saleEnd: "2026-11-30" }
 ];
+// 過去の購入履歴を正しく表示・集計するため、販売終了商品の当時の情報も保持します。
+const archivedProducts = [
+  { id: "rose", name: "Rose", emoji: "🩷", recovery: "🛡️ 10%回復", price: 60000, materials: { "月光の薔薇": 3, "魔力の雫": 2 }, archived: true },
+  { id: "solaris", name: "Solaris", emoji: "💛", recovery: "🛡️ 40%回復", price: 160000, materials: { "太陽石": 4, "太陽のエッセンス": 3, "魔力の結晶": 3 }, archived: true }
+];
+const allProducts = [...products, ...archivedProducts];
+function saleStatus(p) {
+  if (!p.limited) return { available: true, message: "" };
+  const today = dateKey(new Date());
+  if (today < p.saleStart) return { available: false, message: `販売開始前（${p.saleStart.replaceAll("-", "/")}〜${p.saleEnd.replaceAll("-", "/")}）` };
+  if (today > p.saleEnd) return { available: false, message: `販売期間終了（${p.saleStart.replaceAll("-", "/")}〜${p.saleEnd.replaceAll("-", "/")}）` };
+  return { available: true, message: `期間限定：${p.saleStart.replaceAll("-", "/")}〜${p.saleEnd.replaceAll("-", "/")}` };
+}
 const quickAmounts = [1, 5, 10];
 const orders = {};
 const yen = n => "¥" + n.toLocaleString("ja-JP");
 
 function renderProducts() {
   const root = document.getElementById("productList");
-  root.innerHTML = products.map(p => `
+  root.innerHTML = products.map(p => {
+    const status = saleStatus(p);
+    const disabled = status.available ? "" : "disabled";
+    return `
     <article class="product">
       <div class="product-top">
         <div class="emoji">${p.emoji}</div>
         <div>
-          <h3>${p.name}</h3>
+          <h3>${p.name}${p.limited ? ' <span style="font-size:10px;color:#8a70ac">LIMITED</span>' : ""}</h3>
           <div style="margin-top:4px;font-size:12px;color:#8a70ac;font-weight:700">${p.recovery}</div>
+          ${p.limited ? `<div style="margin-top:4px;font-size:11px;color:${status.available ? '#8a70ac' : '#9b7e7e'};font-weight:700">${status.message}</div>` : ""}
           <div class="price">${yen(p.price)} <span style="font-weight:400;color:#91859f">/ 1個</span></div>
         </div>
       </div>
       <p class="quick-label">ワンタップで追加</p>
       <div class="quick-buttons">
-        ${quickAmounts.map(n => `<button type="button" data-id="${p.id}" data-qty="${n}" aria-label="${p.name}を${n}個追加">${n}</button>`).join("")}
+        ${quickAmounts.map(n => `<button type="button" data-id="${p.id}" data-qty="${n}" aria-label="${p.name}を${n}個追加" ${disabled}>${n}</button>`).join("")}
       </div>
       <form class="custom-row" data-form="${p.id}">
-        <input type="number" min="1" step="1" inputmode="numeric" placeholder="その他の個数を入力" aria-label="${p.name}の個数">
-        <button class="add-btn" type="submit">追加</button>
+        <input type="number" min="1" step="1" inputmode="numeric" placeholder="その他の個数を入力" aria-label="${p.name}の個数" ${disabled}>
+        <button class="add-btn" type="submit" ${disabled}>追加</button>
       </form>
     </article>
-  `).join("");
+  `}).join("");
   root.querySelectorAll("[data-qty]").forEach(btn => btn.addEventListener("click", () => addOrder(btn.dataset.id, Number(btn.dataset.qty))));
   root.querySelectorAll("[data-form]").forEach(form => form.addEventListener("submit", e => {
     e.preventDefault();
@@ -336,9 +356,10 @@ function renderProducts() {
   }));
 }
 function addOrder(id, qty) {
+  const p = products.find(x => x.id === id);
+  if (!p || !saleStatus(p).available) { showToast("この商品の販売期間外です"); return; }
   orders[id] = (orders[id] || 0) + qty;
   renderSummary();
-  const p = products.find(x => x.id === id);
   showToast(`${p.name}を${qty}個追加しました`);
 }
 function changeQty(id, delta) {
@@ -420,7 +441,7 @@ function weekKey(value) { return dateKey(mondayOf(new Date(value))); }
 function fmtDate(value) { const d=new Date(value); return `${dateKey(d).replaceAll("-","/")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
 function summarizeWeek(key) {
   const r={qty:0,sales:0,items:{}};
-  purchaseHistory.forEach(entry=>{ if(weekKey(entry.date)!==key)return; Object.entries(entry.items).forEach(([id,qty])=>{const p=products.find(x=>x.id===id);if(!p||qty<=0)return;r.items[id]=(r.items[id]||0)+qty;r.qty+=qty;r.sales+=p.price*qty;}); });
+  purchaseHistory.forEach(entry=>{ if(weekKey(entry.date)!==key)return; Object.entries(entry.items).forEach(([id,qty])=>{const p=allProducts.find(x=>x.id===id);if(!p||qty<=0)return;r.items[id]=(r.items[id]||0)+qty;r.qty+=qty;r.sales+=p.price*qty;}); });
   return r;
 }
 function renderAnalytics() {
@@ -430,7 +451,7 @@ function renderAnalytics() {
   document.getElementById("currentWeekLabel").textContent=`今週：${dateKey(monday).replaceAll("-","/")}〜${dateKey(sunday).replaceAll("-","/")}`;
   document.getElementById("weekQty").textContent=`${current.qty.toLocaleString("ja-JP")} 個`;
   document.getElementById("weekSales").textContent=yen(current.sales);
-  const ranked=products.map(p=>({p,qty:current.items[p.id]||0})).sort((a,b)=>b.qty-a.qty);
+  const ranked=allProducts.filter(p=>!p.archived || (current.items[p.id]||0)>0).map(p=>({p,qty:current.items[p.id]||0})).sort((a,b)=>b.qty-a.qty);
   document.getElementById("weekPopular").textContent=ranked[0]?.qty?`${ranked[0].p.emoji} ${ranked[0].p.name}`:"—";
   const max=Math.max(1,...ranked.map(x=>x.qty));
   document.getElementById("weeklyChart").innerHTML=current.qty?ranked.map(({p,qty})=>`<div class="trend-row"><span class="trend-name">${p.emoji} ${p.name}</span><div class="bar-track"><div class="bar-fill" style="width:${qty/max*100}%"></div></div><span class="trend-qty">${qty} 個</span></div>`).join(""):'<div class="analytics-empty">今週の購入記録はまだありません。注文を作成して「購入を記録」を押してね。</div>';
@@ -438,7 +459,7 @@ function renderAnalytics() {
   let change="比較データなし"; if(previous.qty>0) change=`${current.qty>previous.qty?"+":""}${((current.qty-previous.qty)/previous.qty*100).toFixed(1)}%`; else if(current.qty>0) change="先週購入なし";
   document.getElementById("weekChange").textContent=change;
   const recent=[...purchaseHistory].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
-  document.getElementById("purchaseHistory").innerHTML=recent.length?recent.map(entry=>{const detail=Object.entries(entry.items).map(([id,q])=>{const p=products.find(x=>x.id===id);return p?`${p.emoji} ${p.name} × ${q}`:""}).filter(Boolean).join("、");const total=Object.entries(entry.items).reduce((sum,[id,q])=>sum+(products.find(p=>p.id===id)?.price||0)*q,0);return `<div class="history-entry"><div class="history-date">${fmtDate(entry.date)}</div><div>${detail}</div><strong>${yen(total)}</strong></div>`}).join(""):'<div class="analytics-empty">まだ購入記録がありません。</div>';
+  document.getElementById("purchaseHistory").innerHTML=recent.length?recent.map(entry=>{const detail=Object.entries(entry.items).map(([id,q])=>{const p=allProducts.find(x=>x.id===id);return p?`${p.emoji} ${p.name} × ${q}`:""}).filter(Boolean).join("、");const total=Object.entries(entry.items).reduce((sum,[id,q])=>sum+(allProducts.find(p=>p.id===id)?.price||0)*q,0);return `<div class="history-entry"><div class="history-date">${fmtDate(entry.date)}</div><div>${detail}</div><strong>${yen(total)}</strong></div>`}).join(""):'<div class="analytics-empty">まだ購入記録がありません。</div>';
 }
 // Supabaseの公開設定。Publishable keyはブラウザ利用用で、secret/service_role keyは絶対に使わない。
 const SUPABASE_URL="https://kquwrjzehmbmlbdynhxt.supabase.co";
@@ -517,6 +538,8 @@ document.getElementById("logoutBtn").addEventListener("click",()=>{clearAuthSess
 document.getElementById("recordPurchaseBtn").addEventListener("click", async ()=>{
   const items={}; products.forEach(p=>{const q=Number(orders[p.id]||0);if(Number.isSafeInteger(q)&&q>0)items[p.id]=q;});
   if(!Object.keys(items).length){showToast("記録する注文がありません");return;}
+  const unavailable=products.find(p=>(orders[p.id]||0)>0&&!saleStatus(p).available);
+  if(unavailable){showToast(`${unavailable.name}は販売期間外です。注文を外してください`);return;}
   const entry={id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,date:new Date().toISOString(),items};
   if(!cloudReady()){showToast("ログインしてください");showLogin();return;}
   try{
@@ -529,7 +552,7 @@ document.getElementById("recordPurchaseBtn").addEventListener("click", async ()=
 document.getElementById("exportCsvBtn").addEventListener("click",()=>{
   if(!purchaseHistory.length){showToast("出力する購入記録がありません");return;}
   const rows=[["購入日時","商品","個数","単価","小計"]];
-  [...purchaseHistory].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>Object.entries(e.items).forEach(([id,q])=>{const p=products.find(x=>x.id===id);if(p)rows.push([fmtDate(e.date),p.name,q,p.price,p.price*q]);}));
+  [...purchaseHistory].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e=>Object.entries(e.items).forEach(([id,q])=>{const p=allProducts.find(x=>x.id===id);if(p)rows.push([fmtDate(e.date),p.name,q,p.price,p.price*q]);}));
   const csv="\uFEFF"+rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(",")).join("\r\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`MysticSpells_購入履歴_${dateKey(new Date()).replaceAll("-","")}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast("購入履歴CSVを出力しました");
 });
